@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profile — SocialSphere</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="app-shell">
+  <div id="sidebar-mount"></div>
+
+  <main class="main" style="max-width:620px;">
+    <div class="page-head">
+      <div>
+        <p class="eyebrow">Account</p>
+        <h1>Your profile</h1>
+        <p class="sub">Update your name, contact details, or password.</p>
+      </div>
+    </div>
+
+    <div class="alert" id="alert-box"></div>
+
+    <form class="card" id="profile-form">
+      <div class="field">
+        <label for="fullname">Full name</label>
+        <input class="input" id="fullname" type="text" required>
+      </div>
+      <div class="field">
+        <label for="email">Email</label>
+        <input class="input" id="email" type="email" required>
+      </div>
+      <div class="field">
+        <label for="phone">Phone</label>
+        <input class="input" id="phone" type="text">
+      </div>
+      <div class="field">
+        <label for="password">New password</label>
+        <input class="input" id="password" type="password" placeholder="Leave blank to keep current password" minlength="6">
+      </div>
+      <div style="display:flex; gap:10px;">
+        <button type="submit" class="btn btn-accent">Save changes</button>
+        <button type="reset" class="btn btn-outline">Cancel</button>
+      </div>
+    </form>
+
+    <div class="card" style="margin-top:20px;">
+      <h3 style="margin-bottom:6px;">Member since</h3>
+      <p class="sub" id="member-since">—</p>
+    </div>
+  </main>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/guard.js"></script>
+<script>
+  const alertBox = document.getElementById("alert-box");
+
+  async function load() {
+    try {
+      const { user } = await Api.me();
+      Auth.setUser(user);
+      document.getElementById("fullname").value = user.fullname;
+      document.getElementById("email").value = user.email;
+      document.getElementById("phone").value = user.phone || "";
+      document.getElementById("member-since").textContent = formatDate(user.created_at);
+    } catch (err) {
+      showAlert(alertBox, err.message);
+    }
+  }
+
+  document.getElementById("profile-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    hideAlert(alertBox);
+    try {
+      const payload = {
+        fullname: document.getElementById("fullname").value.trim(),
+        email: document.getElementById("email").value.trim(),
+        phone: document.getElementById("phone").value.trim(),
+      };
+      const password = document.getElementById("password").value;
+      if (password) payload.password = password;
+
+      const data = await Api.updateProfile(payload);
+      Auth.setToken(data.token);
+      Auth.setUser(data.user);
+      document.getElementById("password").value = "";
+      toast("Profile updated.", "success");
+      renderSidebar();
+    } catch (err) {
+      showAlert(alertBox, err.message);
+    }
+  });
+
+  if (requireAuth()) load();
+</script>
+</body>
+</html>

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — SocialSphere</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="app-shell">
+  <div id="sidebar-mount"></div>
+
+  <main class="main">
+    <div class="page-head">
+      <div>
+        <p class="eyebrow">Overview</p>
+        <h1 id="greeting">Welcome back</h1>
+        <p class="sub">Here's what's happening across your posts.</p>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <a href="schedule_post.html" class="btn btn-outline">Schedule a post</a>
+        <a href="create_post.html" class="btn btn-accent">+ New post</a>
+      </div>
+    </div>
+
+    <div class="stat-grid" id="stat-grid">
+      <div class="stat-card"><div class="label">Total posts</div><div class="value">—</div></div>
+      <div class="stat-card"><div class="label">Published</div><div class="value">—</div></div>
+      <div class="stat-card"><div class="label">Scheduled</div><div class="value">—</div></div>
+      <div class="stat-card"><div class="label">Drafts</div><div class="value">—</div></div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin-bottom:14px;">Recent activity</h3>
+      <div class="post-list" id="recent-list">
+        <p class="sub">Loading...</p>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/guard.js"></script>
+<script>
+  (async function init() {
+    if (!requireAuth()) return;
+
+    const user = Auth.getUser();
+    document.getElementById("greeting").textContent = `Welcome back, ${user?.fullname?.split(" ")[0] || "there"}`;
+
+    try {
+      const { totals, recent } = await Api.analyticsSummary();
+
+      const grid = document.getElementById("stat-grid");
+      grid.innerHTML = `
+        <div class="stat-card"><div class="label">Total posts</div><div class="value">${totals.total_posts}</div></div>
+        <div class="stat-card"><div class="label">Published</div><div class="value">${totals.published || 0}</div></div>
+        <div class="stat-card"><div class="label">Scheduled</div><div class="value">${totals.scheduled || 0}</div></div>
+        <div class="stat-card"><div class="label">Drafts</div><div class="value accent">${totals.drafts || 0}</div></div>
+      `;
+
+      const list = document.getElementById("recent-list");
+      if (!recent.length) {
+        list.innerHTML = `<div class="empty-state">
+          <div class="icon">🗂️</div>
+          <h3>No posts yet</h3>
+          <p>Create your first post to see it show up here.</p>
+        </div>`;
+      } else {
+        list.innerHTML = recent.map(p => `
+          <div class="post-row">
+            <div class="info">
+              <h3>${escapeHtml(p.title)}</h3>
+              <div class="meta">
+                <span class="pill pill-${p.status}">${p.status}</span>
+                <span>${escapeHtml(p.platform)}</span>
+                <span>${formatDate(p.created_at)}</span>
+              </div>
+            </div>
+            <div class="actions">
+              <a href="view.html?id=${p.id}" class="btn btn-outline btn-sm">View</a>
+            </div>
+          </div>
+        `).join("");
+      }
+    } catch (err) {
+      toast(err.message, "error");
+    }
+  })();
+
+  function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str ?? "";
+    return div.innerHTML;
+  }
+</script>
+</body>
+</html>

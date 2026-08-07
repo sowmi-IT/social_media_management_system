@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Settings — SocialSphere</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="app-shell">
+  <div id="sidebar-mount"></div>
+
+  <main class="main" style="max-width:620px;">
+    <div class="page-head">
+      <div>
+        <p class="eyebrow">Preferences</p>
+        <h1>Settings</h1>
+        <p class="sub">Control how SocialSphere looks and notifies you.</p>
+      </div>
+    </div>
+
+    <div class="alert" id="alert-box"></div>
+
+    <form class="card" id="settings-form">
+      <div class="field">
+        <label for="theme">Appearance</label>
+        <select class="input" id="theme">
+          <option value="light">Light</option>
+          <option value="dark">Dark (coming soon)</option>
+        </select>
+        <p class="hint">Dark mode is stored on your account but not yet rendered in this demo.</p>
+      </div>
+
+      <div class="field">
+        <label class="checkbox-row">
+          <input type="checkbox" id="email_notifications">
+          Email me when a scheduled post is due
+        </label>
+      </div>
+
+      <button type="submit" class="btn btn-accent">Save settings</button>
+    </form>
+
+    <div class="card" style="margin-top:20px;">
+      <h3 style="margin-bottom:10px; color: var(--danger);">Danger zone</h3>
+      <p class="sub" style="margin-bottom:14px;">Log out of SocialSphere on this device.</p>
+      <button class="btn btn-danger" id="logout-btn-2">Log out</button>
+    </div>
+  </main>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/guard.js"></script>
+<script>
+  const alertBox = document.getElementById("alert-box");
+
+  async function load() {
+    try {
+      const { user } = await Api.me();
+      document.getElementById("theme").value = user.theme;
+      document.getElementById("email_notifications").checked = user.email_notifications;
+    } catch (err) {
+      showAlert(alertBox, err.message);
+    }
+  }
+
+  document.getElementById("settings-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    hideAlert(alertBox);
+    try {
+      await Api.updateSettings({
+        theme: document.getElementById("theme").value,
+        email_notifications: document.getElementById("email_notifications").checked,
+      });
+      toast("Settings saved.", "success");
+    } catch (err) {
+      showAlert(alertBox, err.message);
+    }
+  });
+
+  document.getElementById("logout-btn-2").addEventListener("click", () => {
+    Auth.clear();
+    window.location.href = "login.html";
+  });
+
+  if (requireAuth()) load();
+</script>
+</body>
+</html>

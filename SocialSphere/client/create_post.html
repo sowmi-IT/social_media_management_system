@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Create Post — SocialSphere</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="app-shell">
+  <div id="sidebar-mount"></div>
+
+  <main class="main" style="max-width:720px;">
+    <div class="page-head">
+      <div>
+        <p class="eyebrow">New post</p>
+        <h1>Create a post</h1>
+        <p class="sub">Save it as a draft, or publish it right away.</p>
+      </div>
+    </div>
+
+    <div class="alert" id="alert-box"></div>
+
+    <form class="card" id="post-form">
+      <div class="field">
+        <label for="title">Post title</label>
+        <input class="input" id="title" type="text" placeholder="Enter post title" required>
+      </div>
+
+      <div class="field">
+        <label for="caption">Caption</label>
+        <textarea class="input" id="caption" rows="5" placeholder="Write your caption here..." required></textarea>
+      </div>
+
+      <div class="row-2">
+        <div class="field">
+          <label for="platform">Platform</label>
+          <select class="input" id="platform" required>
+            <option value="Instagram">Instagram</option>
+            <option value="Facebook">Facebook</option>
+            <option value="X / Twitter">X / Twitter</option>
+            <option value="LinkedIn">LinkedIn</option>
+            <option value="TikTok">TikTok</option>
+            <option value="General">General</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="image">Image (optional)</label>
+          <input class="input" id="image" type="file" accept="image/*">
+          <p class="hint">The file name is stored as a reference; files aren't uploaded to the server in this demo.</p>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="hashtags">Hashtags</label>
+        <input class="input" id="hashtags" type="text" placeholder="#socialmedia #marketing">
+      </div>
+
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <button type="submit" class="btn btn-accent" id="publish-btn">Publish now</button>
+        <button type="button" class="btn btn-outline" id="draft-btn">Save as draft</button>
+        <button type="reset" class="btn btn-outline">Clear</button>
+      </div>
+    </form>
+  </main>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/guard.js"></script>
+<script>
+  if (requireAuth()) {
+    const form = document.getElementById("post-form");
+    const alertBox = document.getElementById("alert-box");
+    const publishBtn = document.getElementById("publish-btn");
+    const draftBtn = document.getElementById("draft-btn");
+
+    async function savePost(publish) {
+      hideAlert(alertBox);
+      const title = document.getElementById("title").value.trim();
+      const caption = document.getElementById("caption").value.trim();
+      const platform = document.getElementById("platform").value;
+      const hashtags = document.getElementById("hashtags").value.trim();
+      const imageInput = document.getElementById("image");
+      const image_name = imageInput.files[0] ? imageInput.files[0].name : null;
+
+      if (!title || !caption) {
+        showAlert(alertBox, "Title and caption are required.");
+        return;
+      }
+
+      publishBtn.disabled = true;
+      draftBtn.disabled = true;
+
+      try {
+        await Api.createPost({ title, caption, platform, hashtags, image_name, publish });
+        toast(publish ? "Post published!" : "Draft saved.", "success");
+        setTimeout(() => window.location.href = "posts.html", 700);
+      } catch (err) {
+        showAlert(alertBox, err.message);
+        publishBtn.disabled = false;
+        draftBtn.disabled = false;
+      }
+    }
+
+    form.addEventListener("submit", (e) => { e.preventDefault(); savePost(true); });
+    draftBtn.addEventListener("click", () => savePost(false));
+  }
+</script>
+</body>
+</html>

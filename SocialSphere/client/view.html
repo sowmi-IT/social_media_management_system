@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Post — SocialSphere</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="app-shell">
+  <div id="sidebar-mount"></div>
+
+  <main class="main" style="max-width:720px;">
+    <div class="page-head">
+      <div>
+        <p class="eyebrow">Post detail</p>
+        <h1 id="post-title">Loading…</h1>
+      </div>
+      <a href="posts.html" class="btn btn-outline">&larr; Back to posts</a>
+    </div>
+
+    <div class="alert" id="alert-box"></div>
+
+    <div class="card" id="view-mode">
+      <div class="meta" style="margin-bottom:16px;">
+        <span class="pill" id="status-pill"></span>
+        <span id="platform-label" style="margin-left:10px;color:var(--ink-500);"></span>
+      </div>
+      <p id="caption-text" style="white-space:pre-wrap; margin-bottom:14px;"></p>
+      <p id="hashtags-text" style="color:var(--info); margin-bottom:14px;"></p>
+      <p class="sub" id="schedule-text"></p>
+      <p class="sub" id="created-text"></p>
+
+      <div style="display:flex; gap:10px; margin-top:22px;">
+        <button class="btn btn-outline" id="edit-toggle">Edit</button>
+        <button class="btn btn-danger" id="delete-btn">Delete</button>
+      </div>
+    </div>
+
+    <form class="card" id="edit-form" style="display:none;">
+      <div class="field">
+        <label for="e-title">Title</label>
+        <input class="input" id="e-title" type="text" required>
+      </div>
+      <div class="field">
+        <label for="e-caption">Caption</label>
+        <textarea class="input" id="e-caption" rows="5" required></textarea>
+      </div>
+      <div class="row-2">
+        <div class="field">
+          <label for="e-platform">Platform</label>
+          <select class="input" id="e-platform">
+            <option>Instagram</option><option>Facebook</option><option>X / Twitter</option>
+            <option>LinkedIn</option><option>TikTok</option><option>General</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="e-status">Status</label>
+          <select class="input" id="e-status">
+            <option value="draft">Draft</option>
+            <option value="scheduled">Scheduled</option>
+            <option value="published">Published</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label for="e-hashtags">Hashtags</label>
+        <input class="input" id="e-hashtags" type="text">
+      </div>
+      <div style="display:flex; gap:10px;">
+        <button type="submit" class="btn btn-accent">Save changes</button>
+        <button type="button" class="btn btn-outline" id="cancel-edit">Cancel</button>
+      </div>
+    </form>
+  </main>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/guard.js"></script>
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const postId = params.get("id");
+  const alertBox = document.getElementById("alert-box");
+  let currentPost = null;
+
+  async function load() {
+    if (!postId) { window.location.href = "posts.html"; return; }
+    try {
+      const { post } = await Api.getPost(postId);
+      currentPost = post;
+      renderView(post);
+      if (params.get("edit") === "1") openEdit();
+    } catch (err) {
+      showAlert(alertBox, err.message);
+    }
+  }
+
+  function renderView(p) {
+    document.getElementById("post-title").textContent = p.title;
+    document.getElementById("status-pill").textContent = p.status;
+    document.getElementById("status-pill").className = `pill pill-${p.status}`;
+    document.getElementById("platform-label").textContent = p.platform;
+    document.getElementById("caption-text").textContent = p.caption;
+    document.getElementById("hashtags-text").textContent = p.hashtags || "";
+    document.getElementById("schedule-text").textContent = p.scheduled_at ? `Scheduled for ${formatDate(p.scheduled_at)}` : "";
+    document.getElementById("created-text").textContent = `Created ${formatDate(p.created_at)} · Updated ${formatDate(p.updated_at)}`;
+  }
+
+  function openEdit() {
+    document.getElementById("view-mode").style.display = "none";
+    const form = document.getElementById("edit-form");
+    form.style.display = "block";
+    document.getElementById("e-title").value = currentPost.title;
+    document.getElementById("e-caption").value = currentPost.caption;
+    document.getElementById("e-platform").value = currentPost.platform;
+    document.getElementById("e-status").value = currentPost.status;
+    document.getElementById("e-hashtags").value = currentPost.hashtags || "";
+  }
+
+  document.getElementById("edit-toggle").addEventListener("click", openEdit);
+  document.getElementById("cancel-edit").addEventListener("click", () => {
+    document.getElementById("edit-form").style.display = "none";
+    document.getElementById("view-mode").style.display = "block";
+  });
+
+  document.getElementById("edit-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    try {
+      const { post } = await Api.updatePost(postId, {
+        title: document.getElementById("e-title").value.trim(),
+        caption: document.getElementById("e-caption").value.trim(),
+        platform: document.getElementById("e-platform").value,
+        status: document.getElementById("e-status").value,
+        hashtags: document.getElementById("e-hashtags").value.trim(),
+      });
+      currentPost = post;
+      renderView(post);
+      document.getElementById("edit-form").style.display = "none";
+      document.getElementById("view-mode").style.display = "block";
+      toast("Post updated.", "success");
+    } catch (err) {
+      toast(err.message, "error");
+    }
+  });
+
+  document.getElementById("delete-btn").addEventListener("click", async () => {
+    if (!confirm("Delete this post? This can't be undone.")) return;
+    try {
+      await Api.deletePost(postId);
+      toast("Post deleted.", "success");
+      setTimeout(() => window.location.href = "posts.html", 600);
+    } catch (err) {
+      toast(err.message, "error");
+    }
+  });
+
+  if (requireAuth()) load();
+</script>
+</body>
+</html>

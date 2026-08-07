@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contact — SocialSphere</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="public-header">
+  <div class="brand"><span class="mark">S</span> SocialSphere</div>
+  <nav>
+    <a href="home.html">Home</a>
+    <a href="about.html">About</a>
+    <a href="contact.html">Contact</a>
+    <a href="login.html">Log in</a>
+  </nav>
+</header>
+
+<section class="section" style="padding-top:70px; max-width:520px;">
+  <h2>Get in touch</h2>
+  <p class="sub">This form is a static demo — it doesn't send anywhere yet, but the layout is ready for a real contact endpoint.</p>
+
+  <form class="card" onsubmit="event.preventDefault(); toast('Thanks — this demo form doesn\'t send yet.', 'success');">
+    <div class="field">
+      <label for="name">Name</label>
+      <input class="input" id="name" type="text" placeholder="Your name" required>
+    </div>
+    <div class="field">
+      <label for="email">Email</label>
+      <input class="input" id="email" type="email" placeholder="you@example.com" required>
+    </div>
+    <div class="field">
+      <label for="message">Message</label>
+      <textarea class="input" id="message" rows="5" placeholder="How can we help?" required></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary btn-block">Send message</button>
+  </form>
+</section>
+
+<footer class="public-footer">
+  &copy; 2026 SocialSphere. Built as a learning project.
+</footer>
+
+<script src="js/api.js"></script>
+</body>
+</html>

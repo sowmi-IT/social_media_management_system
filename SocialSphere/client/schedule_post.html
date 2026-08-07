@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Schedule Post — SocialSphere</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="app-shell">
+  <div id="sidebar-mount"></div>
+
+  <main class="main" style="max-width:720px;">
+    <div class="page-head">
+      <div>
+        <p class="eyebrow">Plan ahead</p>
+        <h1>Schedule a post</h1>
+        <p class="sub">Pick a date and time — it'll sit in your queue as "scheduled" until then.</p>
+      </div>
+    </div>
+
+    <div class="alert" id="alert-box"></div>
+
+    <form class="card" id="schedule-form">
+      <div class="field">
+        <label for="title">Post title</label>
+        <input class="input" id="title" type="text" placeholder="Enter post title" required>
+      </div>
+
+      <div class="field">
+        <label for="caption">Caption</label>
+        <textarea class="input" id="caption" rows="5" placeholder="Write your post caption..." required></textarea>
+      </div>
+
+      <div class="row-2">
+        <div class="field">
+          <label for="platform">Platform</label>
+          <select class="input" id="platform" required>
+            <option value="Instagram">Instagram</option>
+            <option value="Facebook">Facebook</option>
+            <option value="X / Twitter">X / Twitter</option>
+            <option value="LinkedIn">LinkedIn</option>
+            <option value="TikTok">TikTok</option>
+            <option value="General">General</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="image">Image (optional)</label>
+          <input class="input" id="image" type="file" accept="image/*">
+        </div>
+      </div>
+
+      <div class="row-2">
+        <div class="field">
+          <label for="date">Date</label>
+          <input class="input" id="date" type="date" required>
+        </div>
+        <div class="field">
+          <label for="time">Time</label>
+          <input class="input" id="time" type="time" required>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="hashtags">Hashtags</label>
+        <input class="input" id="hashtags" type="text" placeholder="#socialmedia #marketing">
+      </div>
+
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <button type="submit" class="btn btn-accent" id="schedule-btn">Schedule post</button>
+        <button type="reset" class="btn btn-outline">Clear</button>
+        <button type="button" class="btn btn-outline" onclick="location.href='dashboard.html'">Back</button>
+      </div>
+    </form>
+  </main>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/guard.js"></script>
+<script>
+  if (requireAuth()) {
+    const today = new Date().toISOString().split("T")[0];
+    document.getElementById("date").min = today;
+
+    const form = document.getElementById("schedule-form");
+    const alertBox = document.getElementById("alert-box");
+    const scheduleBtn = document.getElementById("schedule-btn");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      hideAlert(alertBox);
+
+      const title = document.getElementById("title").value.trim();
+      const caption = document.getElementById("caption").value.trim();
+      const platform = document.getElementById("platform").value;
+      const hashtags = document.getElementById("hashtags").value.trim();
+      const date = document.getElementById("date").value;
+      const time = document.getElementById("time").value;
+      const imageInput = document.getElementById("image");
+      const image_name = imageInput.files[0] ? imageInput.files[0].name : null;
+
+      if (!date || !time) {
+        showAlert(alertBox, "Pick a date and time to schedule this post.");
+        return;
+      }
+
+      const scheduled_at = `${date}T${time}:00`;
+      if (new Date(scheduled_at) < new Date()) {
+        showAlert(alertBox, "Scheduled time must be in the future.");
+        return;
+      }
+
+      scheduleBtn.disabled = true;
+      try {
+        await Api.createPost({ title, caption, platform, hashtags, image_name, scheduled_at });
+        toast("Post scheduled!", "success");
+        setTimeout(() => window.location.href = "posts.html", 700);
+      } catch (err) {
+        showAlert(alertBox, err.message);
+        scheduleBtn.disabled = false;
+      }
+    });
+  }
+</script>
+</body>
+</html>

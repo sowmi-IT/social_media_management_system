@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Log in — SocialSphere</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="auth-shell">
+  <div class="auth-visual">
+    <div class="brand"><span class="mark">S</span> SocialSphere</div>
+    <h2>Welcome back to your control room.</h2>
+    <p>Pick up your drafts and scheduled posts right where you left them.</p>
+    <div class="quote">"The best posting schedule is the one you don't have to hold in your head."</div>
+  </div>
+
+  <div class="auth-form-side">
+    <div class="auth-card">
+      <h1>Log in</h1>
+      <p class="sub">Enter your account details to continue.</p>
+
+      <div class="alert" id="alert-box"></div>
+
+      <form id="login-form">
+        <div class="field">
+          <label for="email">Email</label>
+          <input class="input" id="email" type="email" placeholder="you@example.com" required autocomplete="email">
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input class="input" id="password" type="password" placeholder="Enter your password" required autocomplete="current-password">
+        </div>
+        <div class="field" style="display:flex;justify-content:space-between;align-items:center;">
+          <label class="checkbox-row" style="margin:0;">
+            <input type="checkbox" id="show-password"> Show password
+          </label>
+          <a href="forgot_password.html" style="font-size:0.85rem;font-weight:600;">Forgot password?</a>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block" id="submit-btn">Log in</button>
+      </form>
+
+      <div class="switch">New here? <a href="register.html">Create an account</a></div>
+    </div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+  const form = document.getElementById("login-form");
+  const alertBox = document.getElementById("alert-box");
+  const submitBtn = document.getElementById("submit-btn");
+
+  document.getElementById("show-password").addEventListener("change", (e) => {
+    document.getElementById("password").type = e.target.checked ? "text" : "password";
+  });
+
+  if (Auth.isLoggedIn()) window.location.href = "dashboard.html";
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    hideAlert(alertBox);
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Logging in...";
+
+    try {
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+      const data = await Api.login({ email, password });
+      Auth.setToken(data.token);
+      Auth.setUser(data.user);
+      window.location.href = "dashboard.html";
+    } catch (err) {
+      showAlert(alertBox, err.message);
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Log in";
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Posts — SocialSphere</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="app-shell">
+  <div id="sidebar-mount"></div>
+
+  <main class="main">
+    <div class="page-head">
+      <div>
+        <p class="eyebrow">Library</p>
+        <h1>My posts</h1>
+        <p class="sub">Everything you've drafted, scheduled, or published.</p>
+      </div>
+      <a href="create_post.html" class="btn btn-accent">+ New post</a>
+    </div>
+
+    <div style="display:flex; gap:8px; margin-bottom:18px;" id="filter-row">
+      <button class="btn btn-outline btn-sm active-filter" data-status="">All</button>
+      <button class="btn btn-outline btn-sm" data-status="draft">Drafts</button>
+      <button class="btn btn-outline btn-sm" data-status="scheduled">Scheduled</button>
+      <button class="btn btn-outline btn-sm" data-status="published">Published</button>
+    </div>
+
+    <div class="post-list" id="post-list">
+      <p class="sub">Loading...</p>
+    </div>
+  </main>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/guard.js"></script>
+<script>
+  let currentStatus = "";
+
+  async function loadPosts() {
+    const list = document.getElementById("post-list");
+    list.innerHTML = `<p class="sub">Loading...</p>`;
+    try {
+      const { posts } = await Api.listPosts(currentStatus);
+      if (!posts.length) {
+        list.innerHTML = `<div class="empty-state">
+          <div class="icon">🗂️</div>
+          <h3>No posts here yet</h3>
+          <p>Try a different filter, or create a new post.</p>
+        </div>`;
+        return;
+      }
+      list.innerHTML = posts.map(p => `
+        <div class="post-row" data-id="${p.id}">
+          <div class="info">
+            <h3>${escapeHtml(p.title)}</h3>
+            <p>${escapeHtml(p.caption.slice(0, 90))}${p.caption.length > 90 ? "…" : ""}</p>
+            <div class="meta">
+              <span class="pill pill-${p.status}">${p.status}</span>
+              <span>${escapeHtml(p.platform)}</span>
+              ${p.status === "scheduled" ? `<span>Set for ${formatDate(p.scheduled_at)}</span>` : `<span>${formatDate(p.created_at)}</span>`}
+            </div>
+          </div>
+          <div class="actions">
+            <a href="view.html?id=${p.id}" class="btn btn-outline btn-sm">View</a>
+            <button class="btn btn-outline btn-sm edit-btn" data-id="${p.id}">Edit</button>
+            <button class="btn btn-danger btn-sm delete-btn" data-id="${p.id}">Delete</button>
+          </div>
+        </div>
+      `).join("");
+
+      list.querySelectorAll(".delete-btn").forEach(btn => {
+        btn.addEventListener("click", () => deletePost(btn.dataset.id));
+      });
+      list.querySelectorAll(".edit-btn").forEach(btn => {
+        btn.addEventListener("click", () => window.location.href = `view.html?id=${btn.dataset.id}&edit=1`);
+      });
+    } catch (err) {
+      toast(err.message, "error");
+    }
+  }
+
+  async function deletePost(id) {
+    if (!confirm("Delete this post? This can't be undone.")) return;
+    try {
+      await Api.deletePost(id);
+      toast("Post deleted.", "success");
+      loadPosts();
+    } catch (err) {
+      toast(err.message, "error");
+    }
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str ?? "";
+    return div.innerHTML;
+  }
+
+  if (requireAuth()) {
+    document.querySelectorAll("#filter-row button").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll("#filter-row button").forEach(b => b.classList.remove("btn-primary"));
+        btn.classList.add("btn-primary");
+        currentStatus = btn.dataset.status;
+        loadPosts();
+      });
+    });
+    document.querySelector("#filter-row button").classList.add("btn-primary");
+    loadPosts();
+  }
+</script>
+</body>
+</html>
